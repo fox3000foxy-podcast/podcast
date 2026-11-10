@@ -1,0 +1,4 @@
+# Garde-fou : aucun audio ne doit jamais être commité sur ce repo public.
+# Les .m4a n'existent que dans le workspace éphémère du runner
+# (checkout depuis le repo privé podcast-src) puis sur le site Pages généré.
+*.m4a

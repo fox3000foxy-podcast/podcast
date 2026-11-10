@@ -1,0 +1,70 @@
+name: deploy-from-private-src
+
+# Déploie le site podcast sur GitHub Pages SANS commiter les audios ici.
+# Les .m4a sont checkout depuis le repo privé fox3000foxy/podcast-src
+# uniquement dans le workspace éphémère du runner, assemblés dans site/,
+# puis poussés vers Pages via l'artifact github-pages (rétention 1 jour).
+# Aucun .m4a n'est jamais commité sur ce repo public.
+
+on:
+  repository_dispatch:
+    types: [deploy]
+  workflow_dispatch:
+    inputs:
+      src_ref:
+        description: 'Ref of podcast-src to deploy (branch, tag or SHA)'
+        required: false
+        default: 'master'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private podcast-src sources
+        uses: actions/checkout@v4
+        with:
+          repository: fox3000foxy/podcast-src
+          token: ${{ secrets.SRC_READ_TOKEN }}
+          ref: ${{ github.event.client_payload.sha || inputs.src_ref }}
+          path: src
+          fetch-depth: 1
+
+      - name: Assemble static site (feed + audio)
+        run: |
+          set -euo pipefail
+          mkdir -p site/files
+          cp src/index.html site/index.html
+          cp src/track_numbers.json site/track_numbers.json
+          cp src/*.m4a site/files/
+          touch site/.nojekyll
+          echo "audio files: $(ls site/files/*.m4a | wc -l)"
+          du -sh site site/files
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
