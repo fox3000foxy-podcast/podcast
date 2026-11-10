@@ -48,6 +48,7 @@ jobs:
           mkdir -p site
           cp src/index.html site/index.html
           cp src/playlist.xspf site/playlist.xspf
+          cp src/feed-vlc.xml site/feed-vlc.xml
           cp src/track_numbers.json site/track_numbers.json
           touch site/.nojekyll
           du -sh site
