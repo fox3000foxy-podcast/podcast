@@ -38,6 +38,7 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             index.html
+            playlist.xspf
             track_numbers.json
           sparse-checkout-cone-mode: false
 
@@ -46,6 +47,7 @@ jobs:
           set -euo pipefail
           mkdir -p site
           cp src/index.html site/index.html
+          cp src/playlist.xspf site/playlist.xspf
           cp src/track_numbers.json site/track_numbers.json
           touch site/.nojekyll
           du -sh site
