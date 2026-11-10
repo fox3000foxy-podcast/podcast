@@ -39,6 +39,7 @@ jobs:
           sparse-checkout: |
             index.html
             playlist.xspf
+            feed-vlc.xml
             track_numbers.json
           sparse-checkout-cone-mode: false
 
