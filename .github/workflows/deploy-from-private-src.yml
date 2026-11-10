@@ -1,9 +1,8 @@
 name: deploy-from-private-src
 
-# Déploie le site podcast sur GitHub Pages SANS commiter les audios ici.
-# Les .m4a sont checkout depuis le repo privé fox3000foxy/podcast-src
-# uniquement dans le workspace éphémère du runner, assemblés dans site/,
-# puis poussés vers Pages via l'artifact github-pages (rétention 1 jour).
+# Déploie le site podcast sur GitHub Pages SANS les audios.
+# Les .m4a sont servis par R2 (https://media.fox3000foxy.com/files/...),
+# ici on ne publie que le flux RSS + métadonnées (~700 Ko -> déploiement en secondes).
 # Aucun .m4a n'est jamais commité sur ce repo public.
 
 on:
@@ -29,7 +28,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout private podcast-src sources
+      - name: Checkout private podcast-src (feed only)
         uses: actions/checkout@v4
         with:
           repository: fox3000foxy/podcast-src
@@ -37,17 +36,20 @@ jobs:
           ref: ${{ github.event.client_payload.sha || inputs.src_ref }}
           path: src
           fetch-depth: 1
+          sparse-checkout: |
+            index.html
+            track_numbers.json
+          sparse-checkout-cone-mode: false
 
-      - name: Assemble static site (feed + audio)
+      - name: Assemble static site (feed only, no audio)
         run: |
           set -euo pipefail
-          mkdir -p site/files
+          mkdir -p site
           cp src/index.html site/index.html
           cp src/track_numbers.json site/track_numbers.json
-          cp src/*.m4a site/files/
           touch site/.nojekyll
-          echo "audio files: $(ls site/files/*.m4a | wc -l)"
-          du -sh site site/files
+          du -sh site
+          grep -c '<item>' site/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
